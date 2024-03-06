@@ -1,40 +1,51 @@
-import { ContactList } from './components/ContactList/ContactList';
-import { SearchBox } from './components/SearchBox/SearchBox';
-import { ContactForm } from './components/ContactForm/ContactForm';
-import { fetchContacts } from './redux/operations';
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  selectContactsLoading,
-  selectContactsError,
-  selectFilteredContacts,
-} from './redux/selectors.js';
-import ErrorMessage from './components/ErrorMessage/ErrorMessage';
+import { Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
 import { Loader } from './components/Loader/Loader';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectAuth } from './redux/selectors';
+import { refreshUser } from './redux/operations';
+import { RestrictedRoute } from './RestrictedRoute';
+import { PrivateRoute } from './PrivateRoute';
+import NavBar from './components/Navbar/NavBar';
 import { Toaster } from 'react-hot-toast';
 
 function App() {
+  const Home = lazy(() => import('./pages/HomePage'));
+  const Register = lazy(() => import('./pages/RegisterPage'));
+  const Login = lazy(() => import('./pages/LoginPage'));
+  const Contacts = lazy(() => import('./pages/ContactsPage'));
+
   const dispatch = useDispatch();
-  const loading = useSelector(selectContactsLoading);
-  const error = useSelector(selectContactsError);
-  const filteredContacts = useSelector(selectFilteredContacts);
+  const isRefreshing = useSelector(selectAuth).isRefreshing;
 
   useEffect(() => {
-    dispatch(fetchContacts());
+    dispatch(refreshUser());
   }, [dispatch]);
 
-  return (
+  return isRefreshing ? (
+    <Loader />
+  ) : (
     <>
-      <h1>Phonebook</h1>
-      <ContactForm />
-      <SearchBox />
-      {filteredContacts.length > 0 && !loading && !error && <ContactList />}
-      {filteredContacts.length <= 0 && !loading && !error && (
-        <b>There is no contact with that name</b>
-      )}
-      {loading && <Loader />}
-      {error && <ErrorMessage />}
+      <NavBar />
       <Toaster position="top-center" />
+
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/register"
+            element={<RestrictedRoute redirectTo="/contacts" component={<Register />} />}
+          />
+          <Route
+            path="/login"
+            element={<RestrictedRoute redirectTo="/contacts" component={<Login />} />}
+          />
+          <Route
+            path="/contacts"
+            element={<PrivateRoute redirectTo="/login" component={<Contacts />} />}
+          />
+        </Routes>
+      </Suspense>
     </>
   );
 }

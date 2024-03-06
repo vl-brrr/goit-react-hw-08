@@ -1,5 +1,9 @@
+:root {
+  --main-color: '#BF9039';
+}
+
 body {
-  margin: 16px;
+  margin: 0;
   padding: 0;
 }
 p,
@@ -18,4 +22,9 @@ ul {
 input {
   margin: 0;
   padding: 0;
+}
+
+a {
+  text-decoration: none;
+  color: black;
 }

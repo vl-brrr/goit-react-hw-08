@@ -2,17 +2,18 @@ import { useFormik } from 'formik';
 import InputAdornment from '@mui/material/InputAdornment';
 import * as Yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
-import { addContact } from '../../redux/operations';
-import css from './ContactForm.module.css';
+import { editContact } from '../../redux/operations';
+import css from '../ContactForm/ContactForm.module.css';
 import { selectContacts } from '../../redux/selectors';
 import toast from 'react-hot-toast';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import { MdPhone } from 'react-icons/md';
-import { DefaultBtn } from '../DefaultBtn/DefaultBtn';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
 
-export const ContactForm = ({ closeModal }) => {
+export const EditModal = ({ closeModal, contact: { id, name, number } }) => {
   const dispatch = useDispatch();
   const contacts = useSelector(selectContacts);
 
@@ -28,23 +29,25 @@ export const ContactForm = ({ closeModal }) => {
   });
 
   const formik = useFormik({
-    initialValues: { name: '', number: '' },
+    initialValues: { name: name, number: number },
     validationSchema: contactSchema,
     onSubmit: values => {
-      const existedContact = contacts.find(
-        contact =>
-          contact.name.toLowerCase() === values.name.toLowerCase() ||
-          contact.number === values.number
-      );
-
+      const existedContact = contacts.find(contact => {
+        return (
+          contact.id !== id &&
+          (contact.name.toLowerCase() === values.name.toLowerCase() ||
+            contact.number === values.number)
+        );
+      });
       if (existedContact) {
         toast.error('There is already a contact with that name or number.');
         return;
       }
-      dispatch(addContact({ ...values })).then(() =>
-        toast.success('The contact was successfully added.')
-      );
-      closeModal();
+      console.log(existedContact);
+
+      dispatch(editContact({ ...values, id })).then(() => {
+        return toast.success('Сhanges are saved');
+      });
     },
   });
   return (
@@ -61,6 +64,7 @@ export const ContactForm = ({ closeModal }) => {
             label="Name"
             variant="standard"
             name="name"
+            defaultValue={name}
             onChange={formik.handleChange}
             error={formik.touched.name && Boolean(formik.errors.name)}
             helperText={formik.touched.name && formik.errors.name}
@@ -86,6 +90,7 @@ export const ContactForm = ({ closeModal }) => {
             label="Number"
             variant="standard"
             name="number"
+            defaultValue={number}
             placeholder="Exp.: 642-56-24"
             onChange={formik.handleChange}
             error={formik.touched.number && Boolean(formik.errors.number)}
@@ -107,7 +112,14 @@ export const ContactForm = ({ closeModal }) => {
           />
         </Box>
       </div>
-      <DefaultBtn type="submit">Add contact</DefaultBtn>
+      <Stack direction="row" spacing={2}>
+        <Button type="submit" variant="contained">
+          Save
+        </Button>
+        <Button onClick={closeModal} variant="contained" color="secondary">
+          Cancel
+        </Button>
+      </Stack>
     </form>
   );
 };
